@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Logica;
+package logica;
 
 import java.awt.Color;
 import javax.swing.JOptionPane;
@@ -20,29 +20,58 @@ import javax.swing.border.LineBorder;
  * @author LSMORALES
  */
 public class Memoria {
+	
+	private int numRandom;
+    private int band;
+    private String validar;
     
-    public static void PintarMemoria(){
+    
+    public Memoria(int numRandom, int band, String validar){
+    	this.numRandom = numRandom;
+    	this.band = band;
+    	this.validar = validar;
+    }
+    
+    public static int getNumRandom() {
+		return (int) Math.round(Math.random() * 19 );
+	}
+	public void setNumRandom(int numRandom) {
+		this.numRandom = numRandom;
+	}
+	public int getBand() {
+		return band;
+	}
+	public void setBand(int band) {
+		this.band = 0;
+	}
+	public String getValidar() {
+		return validar;
+	}
+	public void setValidar(String validar) {
+		this.validar = validar;
+	}
+	
+	public void PintarMemoria(){
 
-        int numRandon,band=0;
-        String validar;
+        
 
-        while(band==0){
+        while(getBand()==0){
 
-            numRandon = (int) Math.round(Math.random() * 19 );
-            validar=vector[numRandon].getText();
+            
+            setValidar(vector[getNumRandom()].getText());
 
             if(cantmemoria==20){
                 //desfragmentar();
                 JOptionPane.showMessageDialog(null, "Se ha desfragmentado");
             }
 
-            marcaM=numRandon;
+            marcaM=getNumRandom();
 
-            if(numRandon>1 && numRandon<20 && validar.equals("                     0 KB")){
+            if(getNumRandom()>1 && getNumRandom()<20 && getValidar().equals("                     0 KB")){
                 cantmemoria=cantmemoria+1;
-                vector[numRandon].setBackground(Color.CYAN);
-                vector[numRandon].setText("                     " + memoria + " KB");
-                band=1;
+                vector[getNumRandom()].setBackground(Color.CYAN);
+                vector[getNumRandom()].setText("                     " + memoria + " KB");
+                setBand(1);
             }
         }    
     }//FIn del PintarMemoria

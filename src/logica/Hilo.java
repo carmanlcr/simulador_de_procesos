@@ -3,18 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Logica;
+package logica;
 
 import javax.swing.JOptionPane;
-import static interfaz.Principal.procesos;
-import Logica.AgregarProcesos;
-import static interfaz.Principal.procesos;
-import java.util.logging.Level;
+
+import java.util.Random;
 import java.util.logging.Logger;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumnModel;
-import Logica.Ejecutando;
-import Logica.Memoria;
+
+import interfaz.Principal;
 import static interfaz.Principal.JPRam;
 
 
@@ -24,91 +21,182 @@ import static interfaz.Principal.JPRam;
  * @author LSMORALES
  */
 public class Hilo implements Runnable{
-    public static int Contador;
-    public static int procesoaleatorio, contador_video = 0,contador_impresora = 0, i, auxi, quantum, ram=0;
+    private int contador;
+    private int procesoAleatorio;
+    private int contadorVideo;
+    private int contadorImpresora;
+    private int i;
+    private int auxi;
+    private int quantum;
+    private int ram;
+    private int recvideo = 0;
+    private int recimpresora = 0;
+    
+    
+	public final  String LISTO = "Listo";
+    private static final  String ESPERA = "Espera";
+    public final  String EJECUTANDO = "Ejecutando";
+    public final  String VIDEO = "Video";
+    public final  String IMPRESORA ="Impresora";
+    private static final  String INTERBLOQUEO = "Interbloqueo";
+    private static final  String TERMINADO = "Terminado";
+    
+    /************** IMPORTADOR DE CLASES ******************/
+    Principal prin = new Principal();
+    Ejecutando ejecutando = new Ejecutando();
+    DefaultTableModel modelo = (DefaultTableModel) prin.procesos.getModel();
+    Random matematico = new Random();
+    /*******************************************************/
+    
     public void run(){
-        int randomterminado, recvideo = 0, recimpresora = 0, finalizados = 0;
-        String procesoTerminado = "";
-        DefaultTableModel modelo = (DefaultTableModel) procesos.getModel();;
-        i = modelo.getRowCount();
-        while(i >= 0){
-            int contador_terminados = 0;
-            i = modelo.getRowCount();
-            i--;
+    	/************** DECLARACIÓN DE VARIABLES ******************/
+          
+        
+        int randomAProcesoAleatorio;
+        int auxI;
+        
+        /*******************************************************/
+        
+        setI(modelo.getRowCount());
+        setContadorVideo(0);
+        setContadorImpresora(0);
+        setRam(0);
+        while(getI() >= 0){
+            auxI = getI();
+            auxI--;
+            setI(auxI);
             
-            procesoaleatorio = (int) Math.round(Math.random() * i)+0;
-            auxi = procesoaleatorio;
+            randomAProcesoAleatorio = matematico.nextInt(getI());
+            setProcesoAleatorio(randomAProcesoAleatorio);
+            setAuxi(getProcesoAleatorio());
             
-            String proc = (String)procesos.getValueAt(procesoaleatorio, 2);
+            primerPaso();
             
-            quantum = (int)(procesos.getValueAt(procesoaleatorio, 1));
-            if((proc.equals("Listo")) || (proc.equals("Espera")) || (proc.equals("Ejecutando"))){
-                if(proc.equals("Espera") && ((procesos.getValueAt(procesoaleatorio, 4).equals("Video")) 
-                        || (procesos.getValueAt(procesoaleatorio, 4).equals("Impresora")))){
+            segundoPaso();
+        }
+    }
+    
+    
+
+	private void primerPaso() {
+    	 
+    	 String proc = (String)prin.procesos.getValueAt(getProcesoAleatorio(), 2);
+         
+         setQuantum((int)(prin.procesos.getValueAt(getProcesoAleatorio(), 1)));
+         if((proc.equals(LISTO)) || (proc.equals(ESPERA)) || (proc.equals(EJECUTANDO))){
+             if(proc.equals(ESPERA) && ((prin.procesos.getValueAt(getProcesoAleatorio(), 4).equals(VIDEO)) 
+                     || (prin.procesos.getValueAt(getProcesoAleatorio(), 4).equals(IMPRESORA)))){
+              
+                 if((contadorVideo > 0) && (prin.procesos.getValueAt(getProcesoAleatorio(), 4).equals(VIDEO))){
+                     recvideo++;
+                     if(recvideo > 0){
+                         
+                     	prin.procesos.setValueAt(INTERBLOQUEO, getProcesoAleatorio(), 2);
+                         JOptionPane.showMessageDialog(null, "El recurso "+(getProcesoAleatorio()+1)+" entro en "+INTERBLOQUEO);
+                     }
+                 }else if((contadorImpresora>0) && (prin.procesos.getValueAt(getProcesoAleatorio(), 4).equals(IMPRESORA))){
+                     recimpresora++;
+                     if(recimpresora > 0){
+                         
+                     	prin.procesos.setValueAt(INTERBLOQUEO, getProcesoAleatorio(), 2);
+                         JOptionPane.showMessageDialog(null, "El recurso "+(getProcesoAleatorio()+1)+" entro en "+INTERBLOQUEO);
+                     }
+                 }else{
+                	 ejecutando.ejecutando();
+                 }
                  
-                    if((contador_video > 0) && (procesos.getValueAt(procesoaleatorio, 4).equals("Video"))){
-                        recvideo++;
-                        if(recvideo > 0){
-                            
-                            procesos.setValueAt("Interbloqueo", procesoaleatorio, 2);
-                            JOptionPane.showMessageDialog(null, "El recurso "+(procesoaleatorio+1)+" entro en interbloqueo");
+             }else if(getContadorVideo() < 1 || getContadorImpresora() <1){
+                 if(proc.equals(EJECUTANDO)){
+                 	prin.procesos.setValueAt(EJECUTANDO, getProcesoAleatorio(), 2);
+                 }else{
+                	 ejecutando.ejecutando();
+                 }
+             }
+             
+         }
+    }
+	
+	private void segundoPaso() {
+		int randomterminado;  
+		int finalizados = 0;
+    	if(prin.procesos.getValueAt(getProcesoAleatorio(), 2).equals(EJECUTANDO)){
+            randomterminado = matematico.nextInt(4);
+            if(randomterminado <= 2){
+            	prin.procesos.setValueAt(TERMINADO, getProcesoAleatorio(), 2);
+                setRam(getRam() -(int)prin.procesos.getValueAt(getI(), 3));
+                JPRam.setValue(getRam());
+                if(prin.procesos.getValueAt(getProcesoAleatorio(), 2).equals(TERMINADO)){
+                    if(prin.procesos.getValueAt(getProcesoAleatorio(), 4).equals(VIDEO)){
+                        setContadorVideo(0);
+                        recvideo = 0;
+                    }else if (prin.procesos.getValueAt(getProcesoAleatorio(), 4).equals(IMPRESORA)){
+                        setContadorImpresora(0);
+                        recimpresora = 0;
+                    }
+                    for(int j=0;j<i;j++){
+                        if((prin.procesos.getValueAt(j, 2).equals(INTERBLOQUEO)) || (prin.procesos.getValueAt(j, 2).equals(TERMINADO))){
+                            finalizados++;
+                            if(finalizados > 13){
+                                JOptionPane.showMessageDialog(null, "FIN DEL SIMULADOR");
+                                try{
+                                    Thread.sleep(100000);
+                                }catch(Exception e){
+                                    Logger.getLogger("Log"+e);
+                                }
+                            }
+                        }else{
+                            finalizados = 0;
                         }
-                    }else if((contador_impresora>0) && (procesos.getValueAt(procesoaleatorio, 4).equals("Impresora"))){
-                        recimpresora++;
-                        if(recimpresora > 0){
-                            
-                            procesos.setValueAt("Interbloqueo", procesoaleatorio, 2);
-                            JOptionPane.showMessageDialog(null, "El recurso "+(procesoaleatorio+1)+" entro en interbloqueo");
-                        }
-                    }else{
-                        Ejecutando.ejecutando();
                     }
                     
-                }else if(contador_video < 1 || contador_impresora <1){
-                    if(proc.equals("Ejecutando")){
-                        procesos.setValueAt("Ejecutando", procesoaleatorio, 2);
-                    }else{
-                        Ejecutando.ejecutando();
-                    }
-                }
-                
-            }
-            if(procesos.getValueAt(procesoaleatorio, 2).equals("Ejecutando")){
-                randomterminado = (int) Math.round(Math.random() * 4)+1;
-                if(randomterminado <= 2){
-                    procesos.setValueAt("Terminado", procesoaleatorio, 2);
-                    ram = ram -(int)procesos.getValueAt(i, 3);
-                    JPRam.setValue(ram);
-                    if(procesos.getValueAt(procesoaleatorio, 2).equals("Terminado")){
-                        if(procesos.getValueAt(procesoaleatorio, 4).equals("Video")){
-                            contador_video = 0;
-                            recvideo = 0;
-                        }else if (procesos.getValueAt(procesoaleatorio, 4).equals("Impresora")){
-                            contador_impresora = 0;
-                            recimpresora = 0;
-                        }
-                        for(int j=0;j<i;j++){
-                            if((procesos.getValueAt(j, 2).equals("Interbloqueo")) || (procesos.getValueAt(j, 2).equals("Terminado"))){
-                                finalizados++;
-                                if(finalizados > 13){
-                                    JOptionPane.showMessageDialog(null, "FIN DEL SIMULADOR");
-                                    try{
-                                        Thread.sleep(100000);
-                                    }catch(Exception e){
-                                        System.out.println("OCURRIO UN ERROR "+e);
-                                    }
-                                }
-                            }else{
-                                finalizados = 0;
-                            }
-                        }
-                        
-                        
-                    }
+                    
                 }
             }
         }
-            //i--;
-    }
+		
+	}
+    
+    public int getProcesoAleatorio() {
+		return procesoAleatorio;
+	}
+	public void setProcesoAleatorio(int procesoAleatorio) {
+		this.procesoAleatorio = procesoAleatorio;
+	}
+	public int getContadorVideo() {
+		return contadorVideo;
+	}
+	public void setContadorVideo(int contadorVideo) {
+		this.contadorVideo = contadorVideo;
+	}
+	public int getContadorImpresora() {
+		return contadorImpresora;
+	}
+	public void setContadorImpresora(int contadorImpresora) {
+		this.contadorImpresora = contadorImpresora;
+	}
+	public int getI() {
+		return i;
+	}
+	public void setI(int i) {
+		this.i = i;
+	}
+	public int getAuxi() {
+		return auxi;
+	}
+	public void setAuxi(int auxi) {
+		this.auxi = auxi;
+	}
+	public int getQuantum() {
+		return quantum;
+	}
+	public void setQuantum(int quantum) {
+		this.quantum = quantum;
+	}
+	public int getRam() {
+		return ram;
+	}
+	public void setRam(int ram) {
+		this.ram = ram;
+	}
 }
 
